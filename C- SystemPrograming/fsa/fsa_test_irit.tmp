@@ -1,0 +1,149 @@
+/*********************************
+ * Reviewer: 
+ * Author: Daniel Binyamin (Irit Ofir)
+ * File: fsa_test.c
+ * ******************************/
+
+#include <stddef.h> /*size_t*/
+#include <stdio.h> /*printf*/
+#include <stdlib.h> /*malloc, free*/
+#include <string.h> /*strcpy*/
+#include "fsa.h" 
+
+typedef struct person
+{
+    char name[56];
+    int serial_num;
+} person_t;
+
+void *CreatePool(size_t pool_size)
+{
+    void *pool = NULL;
+    pool = malloc (pool_size + 1);
+    if (!pool)
+    {
+        printf("Memory allocation fail on CreatePool line %d\n", __LINE__);
+    }
+    return pool;
+}
+
+void DestroyPool(void *pool)
+{
+    free(pool);
+    pool = NULL;
+}
+
+person_t CreatePerson(char name[], int serial_num)
+{
+    person_t person = {0};
+
+    strcpy(person.name, name);
+    person.serial_num = serial_num;
+
+    return person;
+}
+
+void TestFlow(void *pool, size_t suggested_size)
+{
+    fsa_t *fsa = NULL;
+    person_t *ptr1 = NULL;
+    person_t *ptr2 = NULL;
+    person_t *ptr3 = NULL;
+    person_t *ptr4 = NULL;
+    person_t *ptr5 = NULL;
+
+    fsa = FSAInit(pool, suggested_size, sizeof(person_t));
+    
+    if (100 != FSACountFree(fsa))
+    {
+        printf("TestFlow failed (countFree) on line %d\n", __LINE__);
+    }
+
+    ptr1 = FSAAlloc(fsa);
+    *ptr1 = CreatePerson("Jerry", 1);
+
+    ptr2 = FSAAlloc(fsa);
+    *ptr2 = CreatePerson("Josh", 2);
+
+    if (1 != ptr1->serial_num)
+    {
+        printf("TestFlow failed (alloc) on line %d\n", __LINE__);
+    }
+
+    if (98 != FSACountFree(fsa))
+    {
+        printf("TestFlow failed (countFree) on line %d\n", __LINE__);
+    }
+
+    ptr3 = FSAAlloc(fsa);
+    *ptr3 = CreatePerson("Tish", 3);
+
+    while (FSACountFree(fsa))
+    {
+        FSAAlloc(fsa);
+    }
+
+    ptr4 = FSAAlloc(fsa);
+
+    if (ptr4)
+    {
+        printf("TestFlow failed (no free memory) on line %d\n", __LINE__);
+    }
+
+    if (0 != FSACountFree(fsa))
+    {
+        printf("TestFlow failed (countFree) on line %d\n", __LINE__);
+    }
+
+    FSAFree(fsa, ptr2);
+
+    if (1 != FSACountFree(fsa))
+    {
+        printf("TestFlow failed (countFree after free) on line %d\n", __LINE__);
+    }
+
+    FSAFree(fsa, ptr1);
+
+    ptr4 = FSAAlloc(fsa);
+
+    if (ptr1 != ptr4)
+    {
+        printf("TestFlow failed (alloc after free) on line %d\n", __LINE__);
+    }
+
+    ptr5 = FSAAlloc(fsa);
+
+    if (ptr5 != ptr2)
+    {
+        printf("TestFlow failed (alloc after free) on line %d\n", __LINE__);
+    }
+
+    ptr3 = FSAAlloc(fsa);
+
+    if (ptr3)
+    {
+        printf("TestFlow failed (no free memory) on line %d\n", __LINE__);
+    }
+
+
+
+}
+
+
+int main()
+{
+    char *pool = NULL;
+    size_t suggested_size = 0;
+
+    suggested_size = FSASuggestSize(sizeof(person_t), 100);
+
+    printf("suggested_size = %lu\nblock size = %lu\n", suggested_size, sizeof(person_t));
+
+    pool = (char *)CreatePool(suggested_size);
+
+    TestFlow(pool + 7, suggested_size);
+
+    DestroyPool(pool);
+
+    return 0;
+}

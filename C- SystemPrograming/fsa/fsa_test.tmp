@@ -1,0 +1,137 @@
+/*********************************
+ * Reviewer: 				
+ * Author: Daniel Binyamin			
+ * File: fsa_test.c				
+ * ******************************/
+#include <stdlib.h>
+#include <stdio.h>
+#include "fsa.h" 
+
+
+void checkInit()
+{
+	void *pool = malloc(100);
+	size_t pool_size = 99;
+	fsa_t *fsa = NULL;
+    	
+	fsa = FSAInit((char*)pool + 1 , pool_size, (size_t)14);
+	Printer(fsa);
+	
+	
+}
+
+void checkAlloc()
+{
+	void *pool = malloc(100);
+	size_t pool_size = 99;
+	fsa_t *fsa = NULL;
+    	
+    	printf("befor alloc: \n");
+	fsa = FSAInit((char*)pool + 1 , pool_size, (size_t)14);
+	Printer(fsa);
+	
+	FSAAlloc(fsa);
+	FSAAlloc(fsa);
+	FSAAlloc(fsa);
+	printf("after alloc: \n");
+	Printer(fsa);
+}
+
+void checkFree()
+{
+	void *pool = malloc(100) , *t1 =0, *t2 =0, *t3 =0;
+	size_t pool_size = 99;
+	fsa_t *fsa = NULL;
+	
+	printf("befor alloc: \n");
+	fsa = FSAInit((char*)pool + 1 , pool_size, (size_t)14);
+	Printer(fsa);	
+	
+	t1 = FSAAlloc(fsa);
+	t2 =FSAAlloc(fsa);
+	t3 =FSAAlloc(fsa);
+	FSAAlloc(fsa);
+
+	printf("after alloc: \n");
+	Printer(fsa);
+	
+	FSAFree(fsa , t1);
+	FSAFree(fsa , t3);
+	FSAFree(fsa , t2);
+	printf("after free: \n");
+	Printer(fsa);
+}
+
+
+void checkCounter()
+{
+	void *pool = malloc(100) , *t1 =0, *t2 =0, *t3 =0;
+	size_t pool_size = 99;
+	fsa_t *fsa = NULL;
+	
+
+	printf("befor alloc: \n");
+	fsa = FSAInit((char*)pool + 1 , pool_size, (size_t)14);
+	printf("ctr shuld be: 5 - %ld \n",FSACountFree(fsa));
+	Printer(fsa);	
+	
+	t1 = FSAAlloc(fsa);
+	printf("ctr shuld be: 4 - %ld \n",FSACountFree(fsa));
+	t2 =FSAAlloc(fsa);
+	printf("ctr shuld be: 3 - %ld \n",FSACountFree(fsa));
+	t3 =FSAAlloc(fsa);
+	printf("ctr shuld be: 2 - %ld \n",FSACountFree(fsa));
+	FSAAlloc(fsa);
+	FSAAlloc(fsa);
+	printf("ctr shuld be: 0 - %ld \n",FSACountFree(fsa));
+
+	printf("after alloc: \n");
+	Printer(fsa);
+	
+	FSAFree(fsa , t1);
+	FSAFree(fsa , t3);
+	FSAFree(fsa , t2);
+	printf("ctr shuld be: 3 - %ld \n",FSACountFree(fsa));
+	printf("after free: \n");
+	Printer(fsa);
+}
+
+void checkSuggestSize()
+{
+	fsa_t *fsa = NULL;
+	size_t block_size = 7;
+	size_t num_of_blocks = 5;
+	size_t pool_size = FSASuggestSize(block_size, num_of_blocks);
+	void *pool = malloc(56);
+	
+	if(pool){
+	fsa = FSAInit((char*)pool +2, pool_size,block_size);
+	
+
+	if(FSACountFree(fsa) != num_of_blocks)
+	{
+		printf("couner:%ld , num:%ld \n",FSACountFree(fsa), num_of_blocks);
+		printf("SuggestSize Error\n");
+	}
+	}
+	else
+	{
+		printf("NULL\n");
+	}
+	
+}
+
+
+int main()
+{
+
+	/*checkInit();
+	
+	checkFree();
+	checkCounter();
+	checkAlloc();*/
+	checkSuggestSize();
+	
+	
+	return 0;
+}

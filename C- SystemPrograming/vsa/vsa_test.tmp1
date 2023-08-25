@@ -1,0 +1,235 @@
+/*********************************
+ * Reviewer: 				
+ * Author: Daniel Binyamin			
+ * File: vsa_test.c				
+ * ******************************/
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include "vsa.h" 
+
+void checkInitAlloc()
+{
+
+    	void * pool = malloc(120);
+    	char arr1[16] = {'a','b','a','b','a','b','a','b',
+		   'a','b','a','b','a','b','a','b'};
+		   
+    	char arr2[8] = {'a','b','a','b','a','b','a', 'a'};
+    	
+	char arr3[32] = {'a','b','a','b','a','b','a','b',
+		   'a','b','a','b','a','b','a','b',
+		   'a','b','a','b','a','b','a','b',
+		   'a','b','a','b','a','b','a','b'};
+		   
+    	void * test1 = 0, *test2 = 0,*test3 = 0 , *test4 = 0;
+
+	vsa_t *vsa = VSAInit(pool, (size_t) 120);
+	
+	
+	
+	test1 = VSAAlloc(vsa , 16);
+	memcpy(test1 , arr1 , 16);
+	if(0 != memcmp(test1, arr1, 16))
+	{
+		printf("Aloc Error (1)\n");
+	
+	}
+	
+	test2 = VSAAlloc(vsa ,8);
+	memcpy(test2 , arr2 , 8);
+	if(0 != memcmp(test2, arr2,8))
+	{
+		printf("Aloc Error (2)\n");
+	
+	}
+	
+	test3 = VSAAlloc(vsa , 32);
+	memcpy(test3 , arr3 , 32);
+	if(0 != memcmp(test3, arr3, 32))
+	{
+		printf("Aloc Error (3)\n");
+	
+	}
+	test4 = VSAAlloc(vsa ,128 );
+	if(test4 != NULL)
+	{
+		printf("Aloc Error (4)\n");
+	
+	}
+	
+	
+	free(pool);
+
+}
+
+
+void checFree()
+{
+void * pool = malloc(120);
+    	char arr1[16] = {'a','b','a','b','a','b','a','b',
+		   'a','b','a','b','a','b','a','b'};
+		   
+    	char arr2[8] = {'a','b','a','b','a','b','a', 'a'};
+    	
+	char arr3[32] = {'a','b','a','b','a','b','a','b',
+		   'a','b','a','b','a','b','a','b',
+		   'a','b','a','b','a','b','a','b',
+		   'a','b','a','b','a','b','a','b'};
+		   
+    	void * test1 = 0, *test2 = 0,*test3 = 0 , *test4 = 0;
+    	size_t s8 = 8 , s16 = 16 ,s32 = 32; 
+   
+	vsa_t *vsa = VSAInit(pool, (size_t) 120);
+	
+	
+	
+	test1 = VSAAlloc(vsa , s16);
+	memcpy(test1 , arr1 , 16);
+	if(0 != memcmp(test1, arr1, 16))
+	{
+		printf("Aloc Error (1)\n");
+	
+	}
+	
+	test2 = VSAAlloc(vsa ,s8);
+	memcpy(test2 , arr2 , 8);
+	if(0 != memcmp(test2, arr2,8))
+	{
+		printf("Aloc Error (2)\n");
+	
+	}
+
+	test3 = VSAAlloc(vsa , s32);
+
+	memcpy(test3 , arr3 , 32);
+	if(0 != memcmp(test3, arr3, 32))
+	{
+		printf("Aloc Error (3)\n");
+	
+	}
+	test4 = VSAAlloc(vsa ,128 );
+
+	if(test4 != NULL)
+	{
+		printf("Aloc Error (4)\n");
+	
+	}
+	VSAFree(test1);
+	if(s16 != VSALargestChunckAvailable(vsa))
+	{
+		printf("Largest Error (1)\n");
+	}
+	
+	VSAFree(test2);
+	if(s16 != VSALargestChunckAvailable(vsa))
+	{
+		printf("Largest Error (2)\n");
+	}
+	VSAFree(test3);
+	if(s32 != VSALargestChunckAvailable(vsa))
+	{
+		printf("Largest Error (3)\n");
+	}
+	
+	
+	
+	free(pool);
+
+}
+
+checkDefragLargest()
+{
+void * pool = malloc(120);
+
+    	void * test1 = 0, *test2 = 0,*test3 = 0 , *test4 = 0;
+    	size_t s8 = 8 , s16 = 16 ,s32 = 32 , cap1 =0  , i =0; 
+ 
+   
+	vsa_t *vsa = VSAInit(pool, (size_t) 120);
+	
+	cap1 = VSALargestChunckAvailable(vsa);
+	printf("largest =  %ld - should be = 88 \n", VSALargestChunckAvailable(vsa));
+	
+	cap1 = cap1/8;
+			
+	test1 = VSAAlloc(vsa , s8);
+	test2 = VSAAlloc(vsa , s8);
+	test3 = VSAAlloc(vsa , s8);
+	test4 = VSAAlloc(vsa , s8);
+	while(i < cap1)
+	{
+		VSAAlloc(vsa , s8);		
+		++i;
+	}
+	i = 0;
+	while(i < (size_t)8 )
+	{
+		size_t a = 0;
+		a +=  *(size_t*)((char*)vsa + a);
+		printf("p:%ld = %ld\n", (size_t)((char*)vsa + a) , a); 
+		++i;
+	}
+	
+	if(0 != VSALargestChunckAvailable(vsa))
+	{
+	
+		printf("alloc or largest error\n");
+		printf("largest =  %ld - should be = 0 \n", VSALargestChunckAvailable(vsa));
+		
+	}
+	
+	
+	VSAFree(test1);
+	
+	
+	VSAFree(test2);
+	
+	VSAFree(test3);
+	
+
+	free(pool);
+
+
+
+
+}
+
+int main()
+{
+
+	
+	checkInitAlloc();
+	checFree();
+	checkDefragLargest();
+
+  
+	return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
